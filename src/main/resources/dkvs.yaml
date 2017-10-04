@@ -1,0 +1,28 @@
+replicas:
+  0:
+    ip: localhost
+    port: 10000
+    countReplicas: 2
+  1:
+    ip: localhost
+    port: 10001
+    countReplicas: 2
+leaders:
+  0:
+    ip: localhost
+    port: 20000
+    countLeaders: 2
+  1:
+    ip: localhost
+    port: 20001
+    countLeaders: 2
+acceptors:
+  0:
+    ip: localhost
+    port: 30003
+  1:
+    ip: localhost
+    port: 30004
+  2:
+    ip: localhost
+    port: 30005
