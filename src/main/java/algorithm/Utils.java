@@ -24,7 +24,7 @@ import static java.lang.ClassLoader.getSystemClassLoader;
 
 public class Utils {
 
-    public static void registerFuckingClasses(Kryo kryo) {
+    public static void registerClasses(Kryo kryo) {
         kryo.setRegistrationRequired(true);
         kryo.register(P1A.class);
         kryo.register(P2A.class);
@@ -44,7 +44,7 @@ public class Utils {
 
     public static Server getServer(int port) throws IOException {
         Server server = new Server();
-        registerFuckingClasses(server.getKryo());
+        registerClasses(server.getKryo());
         server.start();
         server.bind(port);
         return server;
@@ -52,7 +52,7 @@ public class Utils {
 
     public static Client getClient(int timeout, String host, int port) throws IOException {
         Client client = new Client();
-        registerFuckingClasses(client.getKryo());
+        registerClasses(client.getKryo());
         client.start();
         for (int i = 0; i < 6; i++) {
             try {
