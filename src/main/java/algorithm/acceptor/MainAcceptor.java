@@ -13,11 +13,13 @@ public class MainAcceptor {
         }
         int id = Integer.parseInt(args[0]);
         Map<String, Object> map = Utils.parseYaml("acceptors", id);
+        @SuppressWarnings("null")
         int port = (int) map.get("port");
         System.out.format("acceptor %d listen on port %d\n", id, port);
 
         Server server = Utils.getServer(port);
 
+        @SuppressWarnings("unused")
         Acceptor acceptor = new Acceptor(server, id);
         System.out.println("start acceptor");
     }

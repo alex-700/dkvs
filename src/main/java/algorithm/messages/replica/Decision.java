@@ -4,8 +4,6 @@ public class Decision {
     public int slotNumber;
     public Command command;
 
-    public Decision() {}
-
     public Decision(int slotNumber, Command command) {
         this.slotNumber = slotNumber;
         this.command = command;

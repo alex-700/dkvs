@@ -8,8 +8,6 @@ public class BallotProposal implements Comparable<BallotProposal> {
     public int ballot, slot;
     public Command command;
 
-    public BallotProposal() {}
-
     public BallotProposal(int ballot, int slot, Command command) {
         this.ballot = ballot;
         this.slot = slot;

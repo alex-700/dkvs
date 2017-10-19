@@ -6,10 +6,6 @@ public class P2A extends PA {
     public int commanderId;
     public BallotProposal ballotProposal;
 
-    public P2A() {
-        super(0);
-    }
-
     public P2A(int lambda, BallotProposal ballotProposal, int commanderId) {
         super(lambda);
         this.ballotProposal = ballotProposal;

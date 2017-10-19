@@ -5,12 +5,10 @@ import algorithm.Utils;
 import algorithm.messages.replica.*;
 import com.esotericsoftware.kryonet.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
 import java.util.*;
 
-public class Replica {
-    public static final int WINDOW = 200;
+class Replica {
+    private static final int WINDOW = 200;
 
     private final Map<String, String> data;
     private int slotIn;
@@ -19,26 +17,22 @@ public class Replica {
     private Set<Pair<Integer, Command>> proposals;
     private Set<Decision> decisions;
     private final List<Client> toLeaders;
-    private final Server server;
     private final int id;
     private final int countReplicas;
     private final Map<Integer, Connection> answer = new HashMap<>();
     private int commandCount;
-    private final Client toYourself;
     private final FileLogger logger;
 
-    int getCommandId() {
+    private int getCommandId() {
         int ans = commandCount * countReplicas + id;
         commandCount++;
         return ans;
     }
 
-    public Replica(List<Client> toLeaders, Server server, int id, int countReplicas, Client toYourself) {
+    Replica(List<Client> toLeaders, Server server, int id, int countReplicas, Client toYourself) {
         this.toLeaders = toLeaders;
-        this.server = server;
         this.id = id;
         this.countReplicas = countReplicas;
-        this.toYourself = toYourself;
         toYourself.setKeepAliveTCP(1000); // botay message
 
         logger = new FileLogger(String.format("replica%d.log", id));
@@ -61,14 +55,9 @@ public class Replica {
                     decisions.add(d);
                     for (Decision decision : decisions) {
                         if (decision.slotNumber == slotOut) {
-                            Set<Pair<Integer, Command>> nProposals = new HashSet<>();
                             for (Pair<Integer, Command> p : proposals) {
-                                if (p.first == slotOut) {
-                                    if (!decision.command.equals(p.second)) {
-                                        requests.add(p.second);
-                                    }
-                                } else {
-                                    nProposals.add(p);
+                                if (p.first == slotOut && !p.second.equals(decision.command)) {
+                                    requests.add(p.second);
                                 }
                             }
                             System.out.println("slot = " + decision.slotNumber + " " + decision.command);
@@ -119,7 +108,7 @@ public class Replica {
         });
     }
 
-    public boolean checkDecision() {
+    private boolean checkDecision() {
         for (Decision decision : decisions) {
             if (decision.slotNumber == slotIn) {
                 return false;
@@ -128,13 +117,13 @@ public class Replica {
         return true;
     }
 
-    public void propose() {
+    private void propose() {
         while (slotIn < slotOut + WINDOW && requests.size() != 0) {
             if (checkDecision()) {
                 Command c = requests.toArray(new Command[requests.size()])[0];
                 requests.remove(c);
                 proposals.add(new Pair<>(slotIn, c));
-                toLeaders.stream().forEach(client ->  {
+                toLeaders.forEach(client ->  {
                     System.out.println("send propose to leader" + slotIn + " " + c);
                     Utils.send(client, new Propose(slotIn, c));
 //                    client.sendTCP(new Propose(slotIn, c));
@@ -144,7 +133,7 @@ public class Replica {
         }
     }
 
-    public void perform(Command c) {
+    private void perform(Command c) {
         boolean flag = false;
         for (Decision d : decisions) {
             if (d.slotNumber < slotOut && d.command.equals(c)) {

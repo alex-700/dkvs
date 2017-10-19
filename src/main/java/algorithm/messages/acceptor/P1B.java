@@ -8,10 +8,6 @@ import java.util.Set;
 public class P1B extends PB {
     public Set<BallotProposal> accepts;
 
-    public P1B() {
-        super(0, 0);
-    }
-
     public P1B(int ballotNumber, Set<BallotProposal> accepts, int acceptor) {
         super(ballotNumber, acceptor);
         this.accepts = new HashSet<>(accepts);

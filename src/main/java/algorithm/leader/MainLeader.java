@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.util.*;
 
 public class MainLeader {
-    public static final int TIMEOUT = 1000;
+    private static final int TIMEOUT = 1000;
 
     public static void main(String[] args) {
         if (args == null || args.length != 1) {
@@ -23,8 +23,8 @@ public class MainLeader {
         }
         int countLeaders = (int) map.get("countLeaders");
         int port = (int) map.get("port");
-        Server server = null;
-        Client clientToLoader = null;
+        Server server;
+        Client clientToLoader;
         try {
             server = Utils.getServer(port);
             clientToLoader = Utils.getClient(TIMEOUT, (String) map.get("ip"), (int) map.get("port"));
@@ -45,7 +45,7 @@ public class MainLeader {
         for (int i = 0; i < countAcceptors; i++) {
             acceptors.add(i);
             try {
-                System.out.format("connect to acceptor %s:%d\n", acceptorsInfo.get(i).get("ip"), acceptorsInfo.get(i).get("port"));
+                System.out.format("connect to acceptor %s:%s\n", acceptorsInfo.get(i).get("ip"), acceptorsInfo.get(i).get("port"));
                 toAcceptors.add(Utils.getClient(
                         TIMEOUT,
                         (String) acceptorsInfo.get(i).get("ip"),
@@ -66,7 +66,7 @@ public class MainLeader {
         List<Client> toReplicas = new ArrayList<>();
         for (int i = 0; i < countReplicas; i++) {
             try {
-                System.out.format("connect to replica %s:%d\n", replicasInfo.get(i).get("ip"), replicasInfo.get(i).get("port"));
+                System.out.format("connect to replica %s:%s\n", replicasInfo.get(i).get("ip"), replicasInfo.get(i).get("port"));
                 toReplicas.add(Utils.getClient(
                         TIMEOUT,
                         (String) replicasInfo.get(i).get("ip"),
@@ -78,6 +78,7 @@ public class MainLeader {
             }
         }
 
+        @SuppressWarnings("unused")
         Leader leader = new Leader(id, countLeaders, server, toAcceptors, toReplicas, acceptors, clientToLoader);
         System.out.println("start leader");
     }

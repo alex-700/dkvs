@@ -10,14 +10,14 @@ import java.nio.file.*;
 import java.util.Map;
 import java.util.Scanner;
 
-public class FileLogger {
+class FileLogger {
     private final Path file;
 
-    public FileLogger(String fileName) {
+    FileLogger(String fileName) {
         file = Paths.get(fileName);
     }
 
-    public int load(Map<String, String> data) {
+    int load(Map<String, String> data) {
         try (Scanner in = new Scanner(file)) {
             int count = 0;
             while (in.hasNext()) {
@@ -44,7 +44,7 @@ public class FileLogger {
         }
     }
 
-    public void log(Command c) {
+    void log(Command c) {
         if (c instanceof SetCommand) {
             SetCommand s = (SetCommand) c;
             appendLineToFile(String.format("SET %s %s", s.key, s.value));

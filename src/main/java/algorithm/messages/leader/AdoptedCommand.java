@@ -7,10 +7,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class AdoptedCommand implements LeaderCommand {
-    public int ballotNumber;
+    private int ballotNumber;
     public Set<BallotProposal> pvalues;
-
-    public AdoptedCommand() {}
 
     public AdoptedCommand(int ballotNumber, Collection<BallotProposal> pvalues) {
         this.ballotNumber = ballotNumber;
@@ -19,9 +17,6 @@ public class AdoptedCommand implements LeaderCommand {
 
     @Override
     public String toString() {
-        return "AdoptedCommand{" +
-                "ballotNumber=" + ballotNumber +
-                ", pvalues=" + pvalues +
-                '}';
+        return String.format("AdoptedCommand{ballotNumber=%d, pvalues=%s}", ballotNumber, pvalues);
     }
 }

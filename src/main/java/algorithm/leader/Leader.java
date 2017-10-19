@@ -24,34 +24,32 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class Leader {
-    public static final int TIMEOUT_TIME = 3;
-    public static final TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
+class Leader {
+    private static final int TIMEOUT_TIME = 3;
+    private static final TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
 
     private final int id;
     private final List<Client> toAcceptors;
-    private final List<Client> toReplicas;
     private final Set<Integer> acceptors;
     private int ballotNumber;
     private boolean active;
     private Set<Propose> proposals;
-    public final Client clientToLeader;
-    public Scout scout;
-    public Map<Integer, Commander> commanders;
-    public Random rnd;
+    private Scout scout;
+    private Map<Integer, Commander> commanders;
+    private Random rnd;
 
-    public AtomicBoolean scoutAlive = new AtomicBoolean(false);
-    public AtomicBoolean commanderAlive = new AtomicBoolean(false);
+    private AtomicBoolean scoutAlive = new AtomicBoolean(false);
+    private AtomicBoolean commanderAlive = new AtomicBoolean(false);
 
-    private final Thread[] threads;
     private final BlockingDeque<Decision>[] qs;
     private final Condition[] conditions;
     private final ReentrantLock[] locks;
 
-    public Leader(int id, int countLeaders, Server server,
-                  List<Client> toAcceptors, List<Client> toReplicas,
-                  Set<Integer> acceptors, Client clientToLeader) {
-        threads = new Thread[toReplicas.size()];
+    @SuppressWarnings("unchecked")
+    Leader(int id, int countLeaders, Server server,
+           List<Client> toAcceptors, List<Client> toReplicas,
+           Set<Integer> acceptors, Client clientToLeader) {
+        Thread[] threads = new Thread[toReplicas.size()];
         qs = new BlockingDeque[toReplicas.size()];
         locks = new ReentrantLock[toReplicas.size()];
         conditions = new Condition[toReplicas.size()];
@@ -87,9 +85,7 @@ public class Leader {
         this.id = id;
         ballotNumber = id; // smth with id
         this.toAcceptors = toAcceptors;
-        this.toReplicas = toReplicas;
         this.acceptors = acceptors;
-        this.clientToLeader = clientToLeader;
         active = false;
         proposals = new HashSet<>();
         commanders = new HashMap<>();
@@ -114,9 +110,7 @@ public class Leader {
                     triangle(pmax(adopted.pvalues));
                     System.out.println("proposals -> " + proposals);
                     synchronized (Leader.this) {
-                        proposals.stream().forEach(propose -> {
-                            startCommander(propose);
-                        });
+                        proposals.forEach(propose -> startCommander(propose));
                     }
                     active = true;
                 } else if (o instanceof PreemptedCommand) {
@@ -144,66 +138,64 @@ public class Leader {
                 }
             });
         }
-        toAcceptors.stream().forEach(client -> {
-            client.addListener(new Listener() {
-                @Override
-                public void received(Connection connection, Object o) {
-                    if (scoutAlive.get()) {
-                        if (o instanceof P1B) {
-                            P1B p1B = (P1B) o;
-                            System.out.println("our balllot = " + scout.ballotNumber + " I got " + p1B);
-                            if (p1B.ballotNumber == scout.ballotNumber) {
-                                scout.pvalues.addAll(p1B.accepts);
-                                scout.waitors.remove(p1B.acceptor);
-                                if (scout.waitors.size() <= acceptors.size() / 2) {
-                                    if (scoutAlive.compareAndSet(true, false)) {
-                                        Utils.send(clientToLeader, new AdoptedCommand(scout.ballotNumber, scout.pvalues));
-//                                        clientToLeader.sendTCP(new AdoptedCommand(scout.ballotNumber, scout.pvalues));
-                                    }
-                                }
-                            } else {
-                                System.out.println("send preempted");
+        toAcceptors.forEach(client -> client.addListener(new Listener() {
+            @Override
+            public void received(Connection connection, Object o) {
+                if (scoutAlive.get()) {
+                    if (o instanceof P1B) {
+                        P1B p1B = (P1B) o;
+                        System.out.println("our balllot = " + scout.ballotNumber + " I got " + p1B);
+                        if (p1B.ballotNumber == scout.ballotNumber) {
+                            scout.pvalues.addAll(p1B.accepts);
+                            scout.waitors.remove(p1B.acceptor);
+                            if (scout.waitors.size() <= acceptors.size() / 2) {
                                 if (scoutAlive.compareAndSet(true, false)) {
-                                    Utils.send(clientToLeader, new PreemptedCommand(p1B.ballotNumber));
-//                                    clientToLeader.sendTCP(new PreemptedCommand(p1B.ballotNumber));
+                                    Utils.send(clientToLeader, new AdoptedCommand(scout.ballotNumber, scout.pvalues));
+//                                        clientToLeader.sendTCP(new AdoptedCommand(scout.ballotNumber, scout.pvalues));
                                 }
                             }
+                        } else {
+                            System.out.println("send preempted");
+                            if (scoutAlive.compareAndSet(true, false)) {
+                                Utils.send(clientToLeader, new PreemptedCommand(p1B.ballotNumber));
+//                                    clientToLeader.sendTCP(new PreemptedCommand(p1B.ballotNumber));
+                            }
                         }
-                    } else if (commanderAlive.get()) {
-                        if (o instanceof P2B) {
-                            P2B p2B = (P2B) o;
-                            System.out.println("get p2b: " + p2B);
-                            Commander commander = commanders.get(p2B.commanderId);
-                            if (commander == null) return;
-                            if (commander.ballotProposal.ballot == p2B.ballotNumber) {
-                                commander.waitors.remove(p2B.acceptor);
-                                if (commander.waitors.size() <= acceptors.size() / 2) {
-                                    commanders.remove(p2B.commanderId);
-                                    Arrays.stream(qs).forEach(q -> {
-                                        System.out.println("offer to replicas");
-                                        q.addLast(new Decision(commander.ballotProposal.slot, commander.ballotProposal.command));
-                                    });
-                                    if (commanders.isEmpty()) {
-                                        commanderAlive.set(false);
-                                    }
+                    }
+                } else if (commanderAlive.get()) {
+                    if (o instanceof P2B) {
+                        P2B p2B = (P2B) o;
+                        System.out.println("get p2b: " + p2B);
+                        Commander commander = commanders.get(p2B.commanderId);
+                        if (commander == null) return;
+                        if (commander.ballotProposal.ballot == p2B.ballotNumber) {
+                            commander.waitors.remove(p2B.acceptor);
+                            if (commander.waitors.size() <= acceptors.size() / 2) {
+                                commanders.remove(p2B.commanderId);
+                                Arrays.stream(qs).forEach(q -> {
+                                    System.out.println("offer to replicas");
+                                    q.addLast(new Decision(commander.ballotProposal.slot, commander.ballotProposal.command));
+                                });
+                                if (commanders.isEmpty()) {
+                                    commanderAlive.set(false);
                                 }
-                            } else {
-                                if (commanderAlive.compareAndSet(true, false)) {
-                                    commanders.clear();
-                                    System.out.println("Send preempted");
-                                    Utils.send(clientToLeader, new PreemptedCommand(p2B.ballotNumber));
+                            }
+                        } else {
+                            if (commanderAlive.compareAndSet(true, false)) {
+                                commanders.clear();
+                                System.out.println("Send preempted");
+                                Utils.send(clientToLeader, new PreemptedCommand(p2B.ballotNumber));
 //                                    clientToLeader.sendTCP(new PreemptedCommand(p2B.ballotNumber));
-                                }
                             }
                         }
                     }
                 }
-            });
-        });
+            }
+        }));
         startScout();
     }
 
-    public Set<Propose> pmax(Set<BallotProposal> pvals) {
+    private Set<Propose> pmax(Set<BallotProposal> pvals) {
         Set<Propose> ans = new HashSet<>();
         for (BallotProposal pval : pvals) {
             boolean ok = true;
@@ -220,7 +212,7 @@ public class Leader {
         return ans;
     }
 
-    public void triangle(Set<Propose> p) {
+    private void triangle(Set<Propose> p) {
         Set<Propose> ans = new HashSet<>(p);
         for (Propose proposal : proposals) {
             boolean ok = true;
@@ -239,19 +231,20 @@ public class Leader {
         }
     }
 
-    public void startScout() {
+    private void startScout() {
         if (scoutAlive.compareAndSet(false, true)) {
             System.out.println("start Scout");
             scout = new Scout(acceptors, ballotNumber);
-            toAcceptors.stream().forEach(client -> {
-                Utils.send(client, new P1A(id, ballotNumber));
+            toAcceptors.forEach(client ->
+                Utils.send(client, new P1A(id, ballotNumber))
 //                client.sendTCP(new P1A(id, ballotNumber));
-            });
+            );
         }
     }
 
-    public void startCommander(Propose propose) {
+    private void startCommander(Propose propose) {
         int commanderId;
+        //noinspection StatementWithEmptyBody
         while (commanders.containsKey(commanderId = rnd.nextInt()));
         final int finalCommanderId = commanderId;
         commanderAlive.set(true);
@@ -259,10 +252,10 @@ public class Leader {
         System.out.println("start commander on propose " + propose.command);
         Commander commander = new Commander(acceptors, new BallotProposal(ballotNumber, propose.slot, propose.command));
         commanders.put(finalCommanderId, commander);
-        toAcceptors.stream().forEach(client -> {
-            Utils.send(client, new P2A(id, commander.ballotProposal, finalCommanderId));
+        toAcceptors.forEach(client ->
+            Utils.send(client, new P2A(id, commander.ballotProposal, finalCommanderId))
 //                client.sendTCP(new P2A(id, commander.ballotProposal));
-        });
+        );
 //        }
     }
 

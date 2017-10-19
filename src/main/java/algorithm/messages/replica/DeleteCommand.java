@@ -6,8 +6,6 @@ public class DeleteCommand extends Command {
     public int id;
     public String key;
 
-    public DeleteCommand() {}
-
     public DeleteCommand(int id, String key) {
         this.id = id;
         this.key = key;

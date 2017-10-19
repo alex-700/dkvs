@@ -12,10 +12,10 @@ import com.esotericsoftware.kryonet.Listener;
 import java.util.List;
 import java.util.Set;
 
-public class Commander extends LeaderSlave {
-    public final BallotProposal ballotProposal;
+class Commander extends LeaderSlave {
+    final BallotProposal ballotProposal;
 
-    public Commander(Set<Integer> acceptors, BallotProposal ballotProposal) {
+    Commander(Set<Integer> acceptors, BallotProposal ballotProposal) {
         super(acceptors);
         this.ballotProposal = ballotProposal;
     }

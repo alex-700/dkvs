@@ -7,8 +7,6 @@ public class SetCommand extends Command {
     public String key;
     public String value;
 
-    public SetCommand() {}
-
     public SetCommand(int id, String key, String value) {
         this.id = id;
         this.key = key;
