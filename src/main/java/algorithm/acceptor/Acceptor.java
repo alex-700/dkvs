@@ -8,16 +8,12 @@ import com.esotericsoftware.kryonet.Server;
 import java.util.HashSet;
 import java.util.Set;
 
-public class Acceptor {
+class Acceptor {
 
     private int ballotNumber = -1;
     private final Set<BallotProposal> accepts = new HashSet<>();
-    private final Server server;
-    private final int id;
 
-    public Acceptor(Server server, int id) {
-        this.server = server;
-        this.id = id;
+    Acceptor(Server server, int id) {
         server.addListener(new Listener() {
             @Override
             public void received(Connection connection, Object o) {

@@ -6,14 +6,11 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Scanner;
 
 public class MainClient {
     public static void main(String[] args) throws IOException {
         Scanner in = new Scanner(System.in);
-        PrintWriter out = new PrintWriter(System.out);
-
 
         if (args == null || args.length != 2) {
             System.err.format("Usage: %s <host> <port>\n", MainClient.class.getSimpleName());

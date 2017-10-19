@@ -6,8 +6,6 @@ public class Propose {
     public int slot;
     public Command command;
 
-    public Propose() {}
-
     public Propose(int slot, Command command) {
         this.slot = slot;
         this.command = command;

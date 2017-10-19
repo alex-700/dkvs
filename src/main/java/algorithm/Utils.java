@@ -24,7 +24,7 @@ import static java.lang.ClassLoader.getSystemClassLoader;
 
 public class Utils {
 
-    public static void registerClasses(Kryo kryo) {
+    private static void registerClasses(Kryo kryo) {
         kryo.setRegistrationRequired(true);
         kryo.register(P1A.class);
         kryo.register(P2A.class);
@@ -68,8 +68,9 @@ public class Utils {
     }
 
 
-    public static final String fileName = "dkvs.yaml";
+    private static final String fileName = "dkvs.yaml";
 
+    @SuppressWarnings({"ConstantConditions", "unchecked"})
     public static Map<Integer, Map<String, Object>> getOtherConfig(String type) {
         try {
             return ((Map<String, Map<Integer, Map<String, Object>>>) new Yaml().load(new FileInputStream(
@@ -80,19 +81,16 @@ public class Utils {
         }
     }
 
+    @SuppressWarnings({"ConstantConditions", "unchecked"})
     public static Map<String, Object> parseYaml(String type, int id)  {
-        Yaml yaml = new Yaml();
-        Map<String, Map<Integer, Map<String, Object>>> map =
-                null;
         try {
-
-            map = (Map<String, Map<Integer, Map<String, Object>>>) yaml.load(new FileInputStream(
+            Map<String, Map<Integer, Map<String, Object>>> map = (Map<String, Map<Integer, Map<String, Object>>>) new Yaml().load(new FileInputStream(
                    getSystemClassLoader().getResource(fileName).getFile()));
+            return map.get(type).get(id);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             return null;
         }
-        return map.get(type).get(id);
     }
 
     public static void send(Client client, Object message) {
